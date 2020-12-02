@@ -1,6 +1,8 @@
 package it.omicron.main;
 
 import java.io.*;
+import java.util.*;
+
 import com.google.gson.stream.JsonReader;
 import it.omicron.esercizio.*;
 
@@ -12,9 +14,11 @@ public class EsercizioServiceMenu {
 		 *Se non trovato il file, programma lancia eccezione e si ferma. 
 		 *Se trovato, stampa messaggio di avvenuta "ricezione" (il file nella cartella Input esiste).
 		 */
+		MenuContent menu = new MenuContent();
 		
 		try {
 			JsonReader reader = new JsonReader(new FileReader("input/ServiceMenu.json"));
+			
 		} catch (FileNotFoundException e) {
 			System.out.println("EXCEPTION: no such file!");
 			return;
