@@ -6,9 +6,10 @@ public class MenuNode {
 	
 	//Attributi della classe
 	
-	private int nodeid;
+	private int nodeId;
 	private String nodeName;
 	private String nodeType;
+	private String flowType;
 	private String groupType;
 	private int startValidityTs;
 	private int endValidityTs;
@@ -16,12 +17,12 @@ public class MenuNode {
 	private Resource resource;
 	
 	//Metodi Setter e Getter
-	public int getNodeid() {
-		return nodeid;
+	public int getNodeId() {
+		return nodeId;
 	}
 	
-	public void setNodeid(int nodeid) {
-		this.nodeid = nodeid;
+	public void setNodeId(int nodeId) {
+		this.nodeId = nodeId;
 	}
 	
 	public String getNodeName() {
@@ -78,5 +79,13 @@ public class MenuNode {
 
 	public void setResource(Resource resource) {
 		this.resource = resource;
+	}
+
+	public String getFlowType() {
+		return flowType;
+	}
+
+	public void setFlowType(String flowType) {
+		this.flowType = flowType;
 	}
 }

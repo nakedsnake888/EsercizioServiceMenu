@@ -63,7 +63,7 @@ public class EsercizioServiceMenu {
 		Workbook wb = new XSSFWorkbook();
 		Sheet sheet = wb.createSheet("Menu " + menu.getVersion());
 		Row firstRow = createFirstRow(sheet);
-		addNewColumn(sheet, 3);
+		sheet = recursiveMenu(sheet, menu.getNodes(), 0, 0);
 		saveExcel(wb);
 		
 	}
@@ -74,30 +74,79 @@ public class EsercizioServiceMenu {
 		Row row = sheet.createRow(0);
 		row.createCell(0).setCellValue(0);
 		row.createCell(1).setCellValue("ServiceId");
-		row.createCell(2).setCellValue("NodeType");
-		row.createCell(3).setCellValue("GroupType");
-		row.createCell(4).setCellValue("FlowType");
-		row.createCell(5).setCellValue("ResourceId");
+		row.createCell(2).setCellValue("NodeName");
+		row.createCell(3).setCellValue("NodeType");
+		row.createCell(4).setCellValue("GroupType");
+		row.createCell(5).setCellValue("FlowType");
+		row.createCell(6).setCellValue("ResourceId");
 		return row;
 	}
 	
 	//Questo metodo aggiunge una colonna vuota dinamicamente, per poter aumentare il livello di profondità di un nodo.
 	//Sposta tutte le 5 stringhe in avanti di uno per poter fare posto a un nuovo indice.
 	
-	public static void addNewColumn(Sheet sheet, int index) {
+	public static Sheet addNewColumn(Sheet sheet, int index) {
 		int rows = sheet.getPhysicalNumberOfRows();
 		int columns = sheet.getRow(0).getPhysicalNumberOfCells();
+		System.out.println("Columns: " + columns);
 		for(int i = 0; i < rows; i++) {
 			Row r = sheet.getRow(i);
 			r.createCell(columns);
-			for(int y = columns; y > columns - 5; y--) {
+			for(int y = columns; y > columns - 6; y--) {
+				System.out.println(r.getCell(y) + " - " + r.getCell(y-1));
 				r.getCell(y).setCellValue(r.getCell(y-1).getStringCellValue());
 			}
-			r.getCell(columns-5).setCellValue("");
+			r.getCell(columns-6).setCellValue("");
 		}
-		sheet.getRow(0).getCell(columns - 5).setCellValue(index);
+		sheet.getRow(0).getCell(columns - 6).setCellValue(index);
+		return sheet;
 	}
-
+	
+	//Metodo ricorsivo per gestione 
+	public static Sheet recursiveMenu(Sheet sheet, List<MenuNode> nodes, int index, int node_index) {
+		//Caso base 1: Lista Nodes nulla, ritorno.
+		if(nodes == null) {
+			return sheet;
+		}
+		
+		//Caso base 2: Node null, ritorno.
+		MenuNode node = nodes.get(node_index);
+		if(node == null) {
+			return sheet;
+		}
+		
+		//Node non nullo, elaboro informazioni.
+		int max_index = sheet.getRow(0).getLastCellNum() - 7;
+		System.out.println("Max: " + max_index + " Index: " + index);
+		if(index > max_index) {
+			sheet = addNewColumn(sheet, index);
+			max_index = index;
+		}
+		Row r = sheet.createRow(sheet.getPhysicalNumberOfRows());
+		for(int i = 0; i < max_index; i++) {
+			r.createCell(index).setCellValue("");
+		}
+		r.createCell(index).setCellValue("X");
+		if(node.getNodeType().equals("service")) {
+			r.createCell(max_index + 1).setCellValue(node.getNodeId());
+		} else {
+			r.createCell(max_index + 1).setCellValue("");
+		}
+		r.createCell(max_index + 2).setCellValue(node.getNodeName());
+		r.createCell(max_index + 3).setCellValue(node.getNodeType());
+		r.createCell(max_index + 4).setCellValue(node.getGroupType());
+		r.createCell(max_index + 5).setCellValue(node.getFlowType());
+		if(node.getResource() != null) {
+			r.createCell(max_index + 6).setCellValue(node.getResource().getId());
+		} else {
+			r.createCell(max_index + 6).setCellValue("");
+		}
+		System.out.println("Node checked: " + r.getCell(max_index + 2) + " Profondità: " + r.getCell(index));
+		sheet = recursiveMenu(sheet, node.getNodes(), index+1, node_index);
+		//sheet = recursiveMenu(sheet, nodes, index, node_index + 1);
+		return sheet;
+	}
+	
 	public static void saveExcel(Workbook wb) {
 		try (OutputStream fileOut = new FileOutputStream("output/ServiceMenu.xlsx")) {
 		    wb.write(fileOut);
