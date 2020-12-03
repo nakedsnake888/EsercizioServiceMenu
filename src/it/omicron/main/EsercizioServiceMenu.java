@@ -3,6 +3,10 @@ package it.omicron.main;
 import java.io.*;
 import java.util.*;
 
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
 import com.google.gson.stream.*;
 import com.google.gson.*;
 import it.omicron.esercizio.*;
@@ -17,8 +21,9 @@ public class EsercizioServiceMenu {
 		//Parsing di un file JSON per recuperare i dati, da implementare.
 		MenuContent menu = parseFile(element);
 		
-		//Stampa di un valore di uno dei nodi interni, reachable.
-		System.out.println(menu.getNodes().get(0).getNodes().get(0).getNodes().get(1).getNodeName());
+		//Creazione di un file Excel vuoto con il nome corretto.
+		createExcel(menu);
+
 	}
 	
 	public static JsonElement readFromFile() {
@@ -48,5 +53,16 @@ public class EsercizioServiceMenu {
 			System.out.println("EXCEPTION: This element is not a valid JSON file!");
 		}
 		return menu;
+	}
+	
+	public static void createExcel(MenuContent menu) {
+		Workbook wb = new XSSFWorkbook();
+		Sheet sheet1 = wb.createSheet("Prova");
+		String fileName = "Menu" + menu.getVersion() + ".xls";
+		try (OutputStream fileOut = new FileOutputStream("output/" + fileName)) {
+		    wb.write(fileOut);
+		} catch(IOException e) {
+			System.out.println("EXCEPTION: Couldn't write this!");
+		}
 	}
 }
