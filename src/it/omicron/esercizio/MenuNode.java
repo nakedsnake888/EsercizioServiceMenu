@@ -12,7 +12,8 @@ public class MenuNode {
 	private String groupType;
 	private int startValidityTs;
 	private int endValidityTs;
-	private List<Node> nodes;
+	private List<MenuNode> nodes;
+	private Resource resource;
 	
 	//Metodi Setter e Getter
 	public int getNodeid() {
@@ -63,11 +64,19 @@ public class MenuNode {
 		this.endValidityTs = endValidityTs;
 	}
 	
-	public List<Node> getNodes() {
+	public List<MenuNode> getNodes() {
 		return nodes;
 	}
 	
-	public void setNodes(List<Node> nodes) {
+	public void setNodes(List<MenuNode> nodes) {
 		this.nodes = nodes;
+	}
+
+	public Resource getResource() {
+		return resource;
+	}
+
+	public void setResource(Resource resource) {
+		this.resource = resource;
 	}
 }
