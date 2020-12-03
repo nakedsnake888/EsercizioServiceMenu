@@ -70,7 +70,7 @@ public class EsercizioServiceMenu {
 	
 	//Crea e formatta in maniera corretta la prima riga. Formattazione da implementare.
 	
-	private static Row createFirstRow(Sheet sheet) {
+	public static Row createFirstRow(Sheet sheet) {
 		Row row = sheet.createRow(0);
 		row.createCell(0).setCellValue(0);
 		row.createCell(1).setCellValue("ServiceId");
@@ -84,7 +84,7 @@ public class EsercizioServiceMenu {
 	//Questo metodo aggiunge una colonna vuota dinamicamente, per poter aumentare il livello di profondità di un nodo.
 	//Sposta tutte le 5 stringhe in avanti di uno per poter fare posto a un nuovo indice.
 	
-	private static void addNewColumn(Sheet sheet, int index) {
+	public static void addNewColumn(Sheet sheet, int index) {
 		int rows = sheet.getPhysicalNumberOfRows();
 		int columns = sheet.getRow(0).getPhysicalNumberOfCells();
 		for(int i = 0; i < rows; i++) {
