@@ -8,6 +8,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.usermodel.CellType;
 
 import com.google.gson.stream.*;
 import com.google.gson.*;
@@ -24,7 +25,8 @@ public class EsercizioServiceMenu {
 		MenuContent menu = parseFile(element);
 		
 		//Creazione di un file Excel vuoto con il nome corretto.
-		createExcel(menu);
+		//createExcel(menu);
+		recursivePrint(menu.getNodes(), 0);
 
 	}
 	
@@ -88,13 +90,16 @@ public class EsercizioServiceMenu {
 	public static Sheet addNewColumn(Sheet sheet, int index) {
 		int rows = sheet.getPhysicalNumberOfRows();
 		int columns = sheet.getRow(0).getPhysicalNumberOfCells();
-		System.out.println("Columns: " + columns);
 		for(int i = 0; i < rows; i++) {
 			Row r = sheet.getRow(i);
 			r.createCell(columns);
 			for(int y = columns; y > columns - 6; y--) {
-				System.out.println(r.getCell(y) + " - " + r.getCell(y-1));
-				r.getCell(y).setCellValue(r.getCell(y-1).getStringCellValue());
+				Cell c = r.getCell(y-1);
+				if(c.getCellType() == CellType.STRING) {
+					r.getCell(y).setCellValue(r.getCell(y-1).getStringCellValue());
+				} else {
+					r.getCell(y).setCellValue(r.getCell(y-1).getNumericCellValue());
+				}
 			}
 			r.getCell(columns-6).setCellValue("");
 		}
@@ -110,23 +115,24 @@ public class EsercizioServiceMenu {
 		}
 		
 		//Caso base 2: Node null, ritorno.
-		MenuNode node = nodes.get(node_index);
+		MenuNode node = (node_index < nodes.size()) ? nodes.get(node_index) : null;
 		if(node == null) {
 			return sheet;
 		}
 		
 		//Node non nullo, elaboro informazioni.
 		int max_index = sheet.getRow(0).getLastCellNum() - 7;
-		System.out.println("Max: " + max_index + " Index: " + index);
 		if(index > max_index) {
 			sheet = addNewColumn(sheet, index);
 			max_index = index;
 		}
 		Row r = sheet.createRow(sheet.getPhysicalNumberOfRows());
-		for(int i = 0; i < max_index; i++) {
-			r.createCell(index).setCellValue("");
-		}
 		r.createCell(index).setCellValue("X");
+		
+		//DEBUGGING
+		for(int i = 0; i < index; i++) System.out.print("-");
+		System.out.println(node.getNodeName());
+		
 		if(node.getNodeType().equals("service")) {
 			r.createCell(max_index + 1).setCellValue(node.getNodeId());
 		} else {
@@ -141,9 +147,8 @@ public class EsercizioServiceMenu {
 		} else {
 			r.createCell(max_index + 6).setCellValue("");
 		}
-		System.out.println("Node checked: " + r.getCell(max_index + 2) + " Profondità: " + r.getCell(index));
 		sheet = recursiveMenu(sheet, node.getNodes(), index+1, node_index);
-		//sheet = recursiveMenu(sheet, nodes, index, node_index + 1);
+		sheet = recursiveMenu(sheet, nodes, index, node_index + 1);
 		return sheet;
 	}
 	
@@ -153,5 +158,24 @@ public class EsercizioServiceMenu {
 		} catch(IOException e) {
 			System.out.println("EXCEPTION: Couldn't write this!");
 		}
+	}
+	
+	public static void recursivePrint(List<MenuNode> nodes, int index) {
+		//Caso Base 1, se nullo ritorno.
+		if(nodes == null) return;
+		
+		//Caso Base 2, controllo che il nodo interno corrente esista.
+		MenuNode node = null;
+		if(nodes.size() != 0) {
+			node = nodes.remove(0);
+		} else return;
+		
+		//Stampa.
+		for(int i = 0; i < index; i++) System.out.print("-");
+		System.out.println("* " + node.getNodeName());
+		
+		recursivePrint(node.getNodes(), index + 1);
+		recursivePrint(nodes, index);
+		
 	}
 }
