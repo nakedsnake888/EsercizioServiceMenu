@@ -27,6 +27,8 @@ public class EsercizioServiceMenu {
 		
 		//Creazione di un file Excel vuoto con il nome corretto.
 		createExcel(menu);
+		
+		//Metodo usato per Debugging del metodo ricorsivo.
 		//recursivePrint(menu.getNodes(), 0);
 
 	}
@@ -39,8 +41,9 @@ public class EsercizioServiceMenu {
 		
 		//Se no eccezioni, ritorno element.
 		
+		File f = new File("input" + File.separator + "ServiceMenu.json");
 		try {
-			element = JsonParser.parseReader((new FileReader("input/ServiceMenu.json")));
+			element = JsonParser.parseReader((new FileReader(f)));
 			
 		} catch (FileNotFoundException e) {
 			System.out.println("EXCEPTION: no such file!");
@@ -65,8 +68,8 @@ public class EsercizioServiceMenu {
 	public static void createExcel(MenuContent menu) {
 		Workbook wb = new XSSFWorkbook();
 		Sheet sheet = wb.createSheet("Menu " + menu.getVersion());
-		Row firstRow = createFirstRow(wb);
-		sheet = recursiveMenu(sheet, menu.getNodes(), 0);
+		createFirstRow(wb);
+		recursiveMenu(sheet, menu.getNodes(), 0);
 		makeRowBoldAndAutofitColumns(wb);
 		saveExcel(wb);
 		
@@ -74,7 +77,7 @@ public class EsercizioServiceMenu {
 	
 	//Crea e formatta in maniera corretta la prima riga. Formattazione da implementare.
 	
-	public static Row createFirstRow(Workbook wb) {
+	public static void createFirstRow(Workbook wb) {
 		Row row = wb.getSheetAt(0).createRow(0);
 		row.createCell(0).setCellValue(0);
 		row.createCell(1).setCellValue("ServiceId");
@@ -83,7 +86,6 @@ public class EsercizioServiceMenu {
 		row.createCell(4).setCellValue("GroupType");
 		row.createCell(5).setCellValue("FlowType");
 		row.createCell(6).setCellValue("ResourceId");
-		return row;
 	}
 	
 	//Questo metodo aggiunge una colonna vuota dinamicamente, per poter aumentare il livello di profondità di un nodo.
@@ -108,17 +110,15 @@ public class EsercizioServiceMenu {
 	}
 	
 	//Metodo ricorsivo per gestione 
-	public static Sheet recursiveMenu(Sheet sheet, List<MenuNode> nodes, int index) {
+	public static void recursiveMenu(Sheet sheet, List<MenuNode> nodes, int index) {
 		//Caso base 1: Lista Nodes nulla, ritorno.
-		if(nodes == null) {
-			return sheet;
-		}
+		if(nodes == null) return;
 		
 		//Caso base 2: Node null, ritorno.
 		MenuNode node = null;
 		if(nodes.size() != 0) {
 			node = nodes.remove(0);
-		}else return sheet;
+		}else return;
 		
 		//Node non nullo, elaboro informazioni.
 		int max_index = sheet.getRow(0).getLastCellNum() - 7;
@@ -149,16 +149,18 @@ public class EsercizioServiceMenu {
 		}
 		
 		//Chiamate ricorsive e chiamata finale.
-		sheet = recursiveMenu(sheet, node.getNodes(), index+1);
-		sheet = recursiveMenu(sheet, nodes, index);
-		return sheet;
+		recursiveMenu(sheet, node.getNodes(), index+1);
+		recursiveMenu(sheet, nodes, index);
 	}
 	
 	//Semplice metodo che scrive il WorkBook attuale su un file chiamato ServiceMenu situato nella cartella "input".
 	//ATTENZIONE: da implementare tutt i casi eccezionali, per ora.
 	
 	public static void saveExcel(Workbook wb) {
-		try (OutputStream fileOut = new FileOutputStream("output/ServiceMenu.xlsx")) {
+		File f = new File("output");
+		if(!f.exists()) f.mkdir();
+		f = new File(f.getPath() + File.separator + "ServiceMenu.xlsx");
+		try (OutputStream fileOut = new FileOutputStream(f)) {
 		    wb.write(fileOut);
 		} catch(IOException e) {
 			System.out.println("EXCEPTION: Couldn't write this!");
