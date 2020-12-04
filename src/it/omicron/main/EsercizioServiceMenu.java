@@ -4,11 +4,13 @@ import java.io.*;
 import java.util.*;
 
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.Font;
 
 import com.google.gson.*;
 import it.omicron.esercizio.*;
@@ -63,16 +65,17 @@ public class EsercizioServiceMenu {
 	public static void createExcel(MenuContent menu) {
 		Workbook wb = new XSSFWorkbook();
 		Sheet sheet = wb.createSheet("Menu " + menu.getVersion());
-		Row firstRow = createFirstRow(sheet);
+		Row firstRow = createFirstRow(wb);
 		sheet = recursiveMenu(sheet, menu.getNodes(), 0);
+		makeRowBoldAndAutofitColumns(wb);
 		saveExcel(wb);
 		
 	}
 	
 	//Crea e formatta in maniera corretta la prima riga. Formattazione da implementare.
 	
-	public static Row createFirstRow(Sheet sheet) {
-		Row row = sheet.createRow(0);
+	public static Row createFirstRow(Workbook wb) {
+		Row row = wb.getSheetAt(0).createRow(0);
 		row.createCell(0).setCellValue(0);
 		row.createCell(1).setCellValue("ServiceId");
 		row.createCell(2).setCellValue("NodeName");
@@ -137,8 +140,8 @@ public class EsercizioServiceMenu {
 		}
 		r.createCell(max_index + 2).setCellValue(node.getNodeName());
 		r.createCell(max_index + 3).setCellValue(node.getNodeType());
-		r.createCell(max_index + 4).setCellValue(node.getGroupType());
-		r.createCell(max_index + 5).setCellValue(node.getFlowType());
+		r.createCell(max_index + 4).setCellValue((node.getGroupType() != null) ? node.getGroupType() : "");
+		r.createCell(max_index + 5).setCellValue((node.getFlowType() != null) ? node.getFlowType() : "");
 		if(node.getResource() != null) {
 			r.createCell(max_index + 6).setCellValue(node.getResource().getId());
 		} else {
@@ -180,5 +183,22 @@ public class EsercizioServiceMenu {
 		recursivePrint(node.getNodes(), index + 1);
 		recursivePrint(nodes, index);
 		
+	}
+	
+	public static void makeRowBoldAndAutofitColumns(Workbook wb) {
+		//Creo uno stile e un font per la prima riga.
+	    CellStyle style = wb.createCellStyle();
+	    Font font = wb.createFont();
+	    font.setBold(true);
+	    style.setFont(font);
+	    
+	    //Prelevo la prima riga e setto lo stile in ogni cella della riga.
+	    Row row = wb.getSheetAt(0).getRow(0);
+	    for(int i = 0; i < row.getLastCellNum(); i++) {
+	        row.getCell(i).setCellStyle(style);
+	    }
+	    
+	    //AutoFit dei campi, aumentanta leggibilità.
+	    for(int i = 0; i < wb.getSheetAt(0).getRow(0).getPhysicalNumberOfCells(); i++) wb.getSheetAt(0).autoSizeColumn(i);
 	}
 }
