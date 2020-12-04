@@ -10,7 +10,6 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.ss.usermodel.CellType;
 
-import com.google.gson.stream.*;
 import com.google.gson.*;
 import it.omicron.esercizio.*;
 
@@ -25,8 +24,8 @@ public class EsercizioServiceMenu {
 		MenuContent menu = parseFile(element);
 		
 		//Creazione di un file Excel vuoto con il nome corretto.
-		//createExcel(menu);
-		recursivePrint(menu.getNodes(), 0);
+		createExcel(menu);
+		//recursivePrint(menu.getNodes(), 0);
 
 	}
 	
@@ -65,7 +64,7 @@ public class EsercizioServiceMenu {
 		Workbook wb = new XSSFWorkbook();
 		Sheet sheet = wb.createSheet("Menu " + menu.getVersion());
 		Row firstRow = createFirstRow(sheet);
-		sheet = recursiveMenu(sheet, menu.getNodes(), 0, 0);
+		sheet = recursiveMenu(sheet, menu.getNodes(), 0);
 		saveExcel(wb);
 		
 	}
@@ -85,13 +84,11 @@ public class EsercizioServiceMenu {
 	}
 	
 	//Questo metodo aggiunge una colonna vuota dinamicamente, per poter aumentare il livello di profondità di un nodo.
-	//Sposta tutte le 5 stringhe in avanti di uno per poter fare posto a un nuovo indice.
+	//Sposta tutte le 6 celle numeriche/stringhe in avanti di uno per poter fare posto a un nuovo indice.
 	
 	public static Sheet addNewColumn(Sheet sheet, int index) {
-		int rows = sheet.getPhysicalNumberOfRows();
 		int columns = sheet.getRow(0).getPhysicalNumberOfCells();
-		for(int i = 0; i < rows; i++) {
-			Row r = sheet.getRow(i);
+		for(Row r : sheet) {
 			r.createCell(columns);
 			for(int y = columns; y > columns - 6; y--) {
 				Cell c = r.getCell(y-1);
@@ -108,31 +105,31 @@ public class EsercizioServiceMenu {
 	}
 	
 	//Metodo ricorsivo per gestione 
-	public static Sheet recursiveMenu(Sheet sheet, List<MenuNode> nodes, int index, int node_index) {
+	public static Sheet recursiveMenu(Sheet sheet, List<MenuNode> nodes, int index) {
 		//Caso base 1: Lista Nodes nulla, ritorno.
 		if(nodes == null) {
 			return sheet;
 		}
 		
 		//Caso base 2: Node null, ritorno.
-		MenuNode node = (node_index < nodes.size()) ? nodes.get(node_index) : null;
-		if(node == null) {
-			return sheet;
-		}
+		MenuNode node = null;
+		if(nodes.size() != 0) {
+			node = nodes.remove(0);
+		}else return sheet;
 		
 		//Node non nullo, elaboro informazioni.
 		int max_index = sheet.getRow(0).getLastCellNum() - 7;
+		//Controllo se devo aggiungere una colonna, se sì chiamo il metodo per aggiungerla.
 		if(index > max_index) {
 			sheet = addNewColumn(sheet, index);
 			max_index = index;
 		}
+		
+		//Creo una nuova riga assegno il valore X alla casella corretta.
 		Row r = sheet.createRow(sheet.getPhysicalNumberOfRows());
 		r.createCell(index).setCellValue("X");
 		
-		//DEBUGGING
-		for(int i = 0; i < index; i++) System.out.print("-");
-		System.out.println(node.getNodeName());
-		
+		//Scrittura delle restanti celle utilizzando le informazioni del nodo "node".
 		if(node.getNodeType().equals("service")) {
 			r.createCell(max_index + 1).setCellValue(node.getNodeId());
 		} else {
@@ -147,10 +144,15 @@ public class EsercizioServiceMenu {
 		} else {
 			r.createCell(max_index + 6).setCellValue("");
 		}
-		sheet = recursiveMenu(sheet, node.getNodes(), index+1, node_index);
-		sheet = recursiveMenu(sheet, nodes, index, node_index + 1);
+		
+		//Chiamate ricorsive e chiamata finale.
+		sheet = recursiveMenu(sheet, node.getNodes(), index+1);
+		sheet = recursiveMenu(sheet, nodes, index);
 		return sheet;
 	}
+	
+	//Semplice metodo che scrive il WorkBook attuale su un file chiamato ServiceMenu situato nella cartella "input".
+	//ATTENZIONE: da implementare tutt i casi eccezionali, per ora.
 	
 	public static void saveExcel(Workbook wb) {
 		try (OutputStream fileOut = new FileOutputStream("output/ServiceMenu.xlsx")) {
@@ -161,6 +163,7 @@ public class EsercizioServiceMenu {
 	}
 	
 	public static void recursivePrint(List<MenuNode> nodes, int index) {
+		
 		//Caso Base 1, se nullo ritorno.
 		if(nodes == null) return;
 		
