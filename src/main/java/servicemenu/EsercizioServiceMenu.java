@@ -28,15 +28,17 @@ import it.omicron.esercizio.MenuNode;
 public class EsercizioServiceMenu {
 
 	public static void main(String[] args) {
-
+		
+		String[] labels = {"ServiceId", "NodeName", "NodeType", "GroupType", "FlowType", "ResourceId"};
+		
 		// Creazione di un oggetto JsonElement.
 		JsonElement element = readFromFile();
 
-		// Parsing di un file JSON per recuperare i dati, da implementare.
+		// Parsing di un file JSON per recuperare i dati.
 		MenuContent menu = parseFile(element);
 
 		// Creazione di un file Excel vuoto con il nome corretto.
-		createExcel(menu);
+		createExcel(menu, labels);
 
 		// Metodo usato per Debugging del metodo ricorsivo.
 		// recursivePrint(menu.getNodes(), 0);
@@ -54,9 +56,12 @@ public class EsercizioServiceMenu {
 		File f = new File("input" + File.separator + "ServiceMenu.json");
 		try {
 			element = JsonParser.parseReader((new FileReader(f)));
-
+			
+		//Se file non esiste, chiudo l'applicazione.
+			
 		} catch (FileNotFoundException e) {
 			System.out.println("EXCEPTION: no such file!");
+			System.exit(1);
 		}
 
 		return element;
@@ -67,8 +72,12 @@ public class EsercizioServiceMenu {
 		MenuContent menu = null;
 		try {
 			menu = gson.fromJson(element, MenuContent.class);
+		
+		//Se file non JSON, chiudo l'applicazione.
+			
 		} catch (JsonSyntaxException e) {
 			System.out.println("EXCEPTION: This element is not a valid JSON file!");
+			System.exit(1);
 		}
 		return menu;
 	}
@@ -76,28 +85,24 @@ public class EsercizioServiceMenu {
 	// Metodo per creazione di un foglio excel completo. Implementata aggiunta
 	// dinamica di una colonna.
 
-	public static void createExcel(MenuContent menu) {
+	public static void createExcel(MenuContent menu, String[] labels) {
 		Workbook wb = new XSSFWorkbook();
 		Sheet sheet = wb.createSheet("Menu " + menu.getVersion());
-		createFirstRow(wb);
-		recursiveMenu(sheet, menu.getNodes(), 0);
+		createFirstRow(wb, labels);
+		recursiveMenu(sheet, menu.getNodes(), 0, labels);
 		makeRowBoldAndAutofitColumns(wb);
 		saveExcel(wb);
 
 	}
 
-	// Crea e formatta in maniera corretta la prima riga. Formattazione da
-	// implementare.
+	// Crea e formatta in maniera corretta la prima riga. 
 
-	public static void createFirstRow(Workbook wb) {
+	public static void createFirstRow(Workbook wb, String[] labels) {
 		Row row = wb.getSheetAt(0).createRow(0);
 		row.createCell(0).setCellValue(0);
-		row.createCell(1).setCellValue("ServiceId");
-		row.createCell(2).setCellValue("NodeName");
-		row.createCell(3).setCellValue("NodeType");
-		row.createCell(4).setCellValue("GroupType");
-		row.createCell(5).setCellValue("FlowType");
-		row.createCell(6).setCellValue("ResourceId");
+		for(int i = 1; i < labels.length + 1; i++) {
+			row.createCell(i).setCellValue(labels[i-1]);
+		}
 	}
 
 	// Questo metodo aggiunge una colonna vuota dinamicamente, per poter aumentare
@@ -105,11 +110,11 @@ public class EsercizioServiceMenu {
 	// Sposta tutte le 6 celle numeriche/stringhe in avanti di uno per poter fare
 	// posto a un nuovo indice.
 
-	public static Sheet addNewColumn(Sheet sheet, int index) {
+	public static Sheet addNewColumn(Sheet sheet, int index, String[] labels) {
 		int columns = sheet.getRow(0).getPhysicalNumberOfCells();
 		for (Row r : sheet) {
 			r.createCell(columns);
-			for (int y = columns; y > columns - 6; y--) {
+			for (int y = columns; y > columns - labels.length; y--) {
 				Cell c = r.getCell(y - 1);
 				if (c.getCellType() == CellType.STRING) {
 					r.getCell(y).setCellValue(r.getCell(y - 1).getStringCellValue());
@@ -117,14 +122,14 @@ public class EsercizioServiceMenu {
 					r.getCell(y).setCellValue(r.getCell(y - 1).getNumericCellValue());
 				}
 			}
-			r.getCell(columns - 6).setCellValue("");
+			r.getCell(columns - labels.length).setCellValue("");
 		}
-		sheet.getRow(0).getCell(columns - 6).setCellValue(index);
+		sheet.getRow(0).getCell(columns - labels.length).setCellValue(index);
 		return sheet;
 	}
 
 	// Metodo ricorsivo per gestione
-	public static void recursiveMenu(Sheet sheet, List<MenuNode> nodes, int index) {
+	public static void recursiveMenu(Sheet sheet, List<MenuNode> nodes, int index, String[] labels) {
 		// Caso base 1: Lista Nodes nulla, ritorno.
 		if (nodes == null)
 			return;
@@ -137,11 +142,11 @@ public class EsercizioServiceMenu {
 			return;
 
 		// Node non nullo, elaboro informazioni.
-		int max_index = sheet.getRow(0).getLastCellNum() - 7;
+		int max_index = sheet.getRow(0).getLastCellNum() - labels.length - 1;
 		// Controllo se devo aggiungere una colonna, se sì chiamo il metodo per
 		// aggiungerla.
 		if (index > max_index) {
-			sheet = addNewColumn(sheet, index);
+			sheet = addNewColumn(sheet, index, labels);
 			max_index = index;
 		}
 
@@ -150,24 +155,11 @@ public class EsercizioServiceMenu {
 		r.createCell(index).setCellValue("X");
 
 		// Scrittura delle restanti celle utilizzando le informazioni del nodo "node".
-		if (node.getNodeType().equals("service")) {
-			r.createCell(max_index + 1).setCellValue(node.getNodeId());
-		} else {
-			r.createCell(max_index + 1).setCellValue("");
-		}
-		r.createCell(max_index + 2).setCellValue(node.getNodeName());
-		r.createCell(max_index + 3).setCellValue(node.getNodeType());
-		r.createCell(max_index + 4).setCellValue((node.getGroupType() != null) ? node.getGroupType() : "");
-		r.createCell(max_index + 5).setCellValue((node.getFlowType() != null) ? node.getFlowType() : "");
-		if (node.getResource() != null) {
-			r.createCell(max_index + 6).setCellValue(node.getResource().getId());
-		} else {
-			r.createCell(max_index + 6).setCellValue("");
-		}
+		populateRow(node, r, max_index);
 
 		// Chiamate ricorsive e chiamata finale.
-		recursiveMenu(sheet, node.getNodes(), index + 1);
-		recursiveMenu(sheet, nodes, index);
+		recursiveMenu(sheet, node.getNodes(), index + 1, labels);
+		recursiveMenu(sheet, nodes, index, labels);
 	}
 
 	// Semplice metodo che scrive il WorkBook attuale su un file chiamato
@@ -183,6 +175,26 @@ public class EsercizioServiceMenu {
 			wb.write(fileOut);
 		} catch (IOException e) {
 			System.out.println("EXCEPTION: Couldn't write this!");
+			System.exit(1);
+		}
+	}
+	
+	//Spostato codice per popolare la riga in una funzione a parte per maggiore pulizia.
+	
+	public static void populateRow(MenuNode node, Row r, int max_index) {
+		if (node.getNodeType().equals("service")) {
+			r.createCell(max_index + 1).setCellValue(node.getNodeId());
+		} else {
+			r.createCell(max_index + 1).setCellValue("");
+		}
+		r.createCell(max_index + 2).setCellValue(node.getNodeName());
+		r.createCell(max_index + 3).setCellValue(node.getNodeType());
+		r.createCell(max_index + 4).setCellValue((node.getGroupType() != null) ? node.getGroupType() : "");
+		r.createCell(max_index + 5).setCellValue((node.getFlowType() != null) ? node.getFlowType() : "");
+		if (node.getResource() != null) {
+			r.createCell(max_index + 6).setCellValue(node.getResource().getId());
+		} else {
+			r.createCell(max_index + 6).setCellValue("");
 		}
 	}
 
