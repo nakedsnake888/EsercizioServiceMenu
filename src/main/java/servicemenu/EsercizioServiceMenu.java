@@ -6,6 +6,8 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -26,10 +28,10 @@ import it.omicron.esercizio.MenuContent;
 import it.omicron.esercizio.MenuNode;
 
 public class EsercizioServiceMenu {
-
+	
+	private static final List<String>labels = Arrays.asList("ServiceId", "NodeName", "NodeType", "GroupType", "FlowType", "ResourceId");
+	
 	public static void main(String[] args) {
-		
-		String[] labels = {"ServiceId", "NodeName", "NodeType", "GroupType", "FlowType", "ResourceId"};
 		
 		// Creazione di un oggetto JsonElement.
 		JsonElement element = readFromFile();
@@ -38,7 +40,7 @@ public class EsercizioServiceMenu {
 		MenuContent menu = parseFile(element);
 
 		// Creazione di un file Excel vuoto con il nome corretto.
-		createExcel(menu, labels);
+		createExcel(menu);
 
 		// Metodo usato per Debugging del metodo ricorsivo.
 		// recursivePrint(menu.getNodes(), 0);
@@ -85,11 +87,11 @@ public class EsercizioServiceMenu {
 	// Metodo per creazione di un foglio excel completo. Implementata aggiunta
 	// dinamica di una colonna.
 
-	public static void createExcel(MenuContent menu, String[] labels) {
+	public static void createExcel(MenuContent menu) {
 		Workbook wb = new XSSFWorkbook();
 		Sheet sheet = wb.createSheet("Menu " + menu.getVersion());
-		createFirstRow(wb, labels);
-		recursiveMenu(sheet, menu.getNodes(), 0, labels);
+		createFirstRow(wb);
+		recursiveMenu(sheet, menu.getNodes(), 0);
 		makeRowBoldAndAutofitColumns(wb);
 		saveExcel(wb);
 
@@ -97,11 +99,11 @@ public class EsercizioServiceMenu {
 
 	// Crea e formatta in maniera corretta la prima riga. 
 
-	public static void createFirstRow(Workbook wb, String[] labels) {
+	public static void createFirstRow(Workbook wb) {
 		Row row = wb.getSheetAt(0).createRow(0);
 		row.createCell(0).setCellValue(0);
-		for(int i = 1; i < labels.length + 1; i++) {
-			row.createCell(i).setCellValue(labels[i-1]);
+		for(int i = 1; i < labels.size() + 1; i++) {
+			row.createCell(i).setCellValue(labels.get(i-1));
 		}
 	}
 
@@ -110,11 +112,11 @@ public class EsercizioServiceMenu {
 	// Sposta tutte le 6 celle numeriche/stringhe in avanti di uno per poter fare
 	// posto a un nuovo indice.
 
-	public static Sheet addNewColumn(Sheet sheet, int index, String[] labels) {
+	public static Sheet addNewColumn(Sheet sheet, int index) {
 		int columns = sheet.getRow(0).getPhysicalNumberOfCells();
 		for (Row r : sheet) {
 			r.createCell(columns);
-			for (int y = columns; y > columns - labels.length; y--) {
+			for (int y = columns; y > columns - labels.size(); y--) {
 				Cell c = r.getCell(y - 1);
 				if (c.getCellType() == CellType.STRING) {
 					r.getCell(y).setCellValue(r.getCell(y - 1).getStringCellValue());
@@ -122,14 +124,14 @@ public class EsercizioServiceMenu {
 					r.getCell(y).setCellValue(r.getCell(y - 1).getNumericCellValue());
 				}
 			}
-			r.getCell(columns - labels.length).setCellValue("");
+			r.getCell(columns - labels.size()).setCellValue("");
 		}
-		sheet.getRow(0).getCell(columns - labels.length).setCellValue(index);
+		sheet.getRow(0).getCell(columns - labels.size()).setCellValue(index);
 		return sheet;
 	}
 
 	// Metodo ricorsivo per gestione
-	public static void recursiveMenu(Sheet sheet, List<MenuNode> nodes, int index, String[] labels) {
+	public static void recursiveMenu(Sheet sheet, List<MenuNode> nodes, int index) {
 		// Caso base 1: Lista Nodes nulla, ritorno.
 		if (nodes == null)
 			return;
@@ -142,11 +144,11 @@ public class EsercizioServiceMenu {
 			return;
 
 		// Node non nullo, elaboro informazioni.
-		int max_index = sheet.getRow(0).getLastCellNum() - labels.length - 1;
+		int max_index = sheet.getRow(0).getLastCellNum() - labels.size() - 1;
 		// Controllo se devo aggiungere una colonna, se sì chiamo il metodo per
 		// aggiungerla.
 		if (index > max_index) {
-			sheet = addNewColumn(sheet, index, labels);
+			sheet = addNewColumn(sheet, index);
 			max_index = index;
 		}
 
@@ -158,8 +160,8 @@ public class EsercizioServiceMenu {
 		populateRow(node, r, max_index);
 
 		// Chiamate ricorsive e chiamata finale.
-		recursiveMenu(sheet, node.getNodes(), index + 1, labels);
-		recursiveMenu(sheet, nodes, index, labels);
+		recursiveMenu(sheet, node.getNodes(), index + 1);
+		recursiveMenu(sheet, nodes, index);
 	}
 
 	// Semplice metodo che scrive il WorkBook attuale su un file chiamato
